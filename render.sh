@@ -26,6 +26,7 @@ function confirm_F()
 		echo "Interruzione"
 		exit 1
 	fi
+	REPLY=''
 }
 function gatherSub_F()
 {
@@ -36,20 +37,23 @@ function getSub_F()
 {
 	#echo "find $DIRPATH -regex '.*\.srt'"
 	#echo $DIRPATH
-	SUBFILES=`find $DIRPATH -regex '.*\.srt'`
-	SUBSTRING="$4"
-	for s in $SUBFILES; do
-		echo "+++CICLO			$s"
+	REPLY=''
+
+	readarray  SUBFILES < <(find "$DIRPATH" -type f -regex '.*\.srt' -print)
+	SUB_STRING="$4"
+	echo "$SUB_STRING"
+	for s in "${SUBFILES[@]}"; do
+		s=`echo "$s" | xargs `
 		while [[ ! $REPLY =~ ^[ynax] ]]; do
 			echo "File: $s"
 			read -p "Aggiungere il subfile?[y|n|a|x]" -r -n 1 && echo
 		done
 		if [[ $REPLY = 'y' ]]; then
 			echo "Aggiunta del file"
-			if [[ -z $SUBSTRING ]]; then
-				SUBSTRING="${s}"
+			if [[ -z $SUB_STRING ]]; then
+				SUB_STRING="${s}"
 			else
-				SUBSTRING="${SUBSTRING},${s}"
+				SUB_STRING="${SUB_STRING},${s}"
 			fi
 			REPLY=''
 		elif [[ $REPLY = 'n' ]]; then
@@ -57,29 +61,31 @@ function getSub_F()
 			REPLY=''
 		elif [[ $REPLY = 'a' ]]; then
 			echo "Aggiunta sequenziale:		$s"
-			if [[ -z $SUBSTRING ]]; then
-				SUBSTRING="${s}"
+			if [[ -z $SUB_STRING ]]; then
+				SUB_STRING="${s}"
 			else
-				SUBSTRING="${SUBSTRING},${s}"
+				SUB_STRING="${SUB_STRING},${s}"
 			fi
 		elif [[ $REPLY = 'x' ]]; then
 			echo "Ignora sequenziale:		$s"
 		else
 			echo "Impossible branch in getSub_F"
-			exit -2
+			exit 2
 		fi
 	done
 	echo "++SUB FINALE"
-	echo $SUBSTRING
+	echo $SUB_STRING
+	REPLY=''
 }
 ##-----------------------
 ##-----------------------
 echo "Definizione parametri..."
 OUTPUT_DIR="/hdd/Render/Output"
 FILEPATH=`realpath "$1"`
-DIRPATH=`dirname $FILEPATH`
+DIRPATH=`dirname "$FILEPATH"`
 FILENAME=`echo "$FILEPATH"|sed 's|.*/\(.*\)\..*|\1|'`
-
+echo "dir: "$DIRPATH""
+echo "file: "$FILEPATH""
 
 INPUT_FILE="$FILEPATH"
 #--OUTPUT FILE
@@ -97,15 +103,15 @@ EXTRA="-x pmode:pools=16" #"wpp:pools='thread count'"		#var=val:var=val
 #--SUB
 
 getSub_F
-if [[ -n $SUBSTRING ]]; then
-	SUB="--srt-file $SUBSTRING"
+if [[ -n $SUB_STRING ]]; then
+	SUB="--srt-file \""$SUB_STRING"\" "
 fi
 #--
-QUIET="--verbose=0 2> /dev/null"
+QUIET=''#"--verbose=0 2> /dev/null"
 #--LANCIO RENDER
-COMMAND='HandBrakeCLI -i "$INPUT_FILE" -o "${OUTPUT_FILE}" $VIDEO $AUDIO $FILTERS $EXTRA $SUB $QUIET'
-echo $COMMAND
-eval $COMMAND
+COMMAND="HandBrakeCLI -i \""${INPUT_FILE}"\" -o \""${OUTPUT_FILE}"\" $VIDEO $AUDIO $FILTERS $EXTRA "${SUB}" $QUIET"
+echo "++" && echo"$COMMAND" && echo "++"
+eval "$COMMAND"
 
 ##TODO
 #mettere versione ricorsiva per tutti i file in una cartella
