@@ -101,9 +101,11 @@ if [[ -n $SUBSTRING ]]; then
 	SUB="--srt-file $SUBSTRING"
 fi
 #--
+QUIET="--verbose=0 2> /dev/null"
 #--LANCIO RENDER
-echo HandBrakeCLI -i "$INPUT_FILE" -o "${OUTPUT_FILE}" $VIDEO $AUDIO $FILTERS $EXTRA $SUB "--verbose=0"
-HandBrakeCLI -i "$INPUT_FILE" -o "${OUTPUT_FILE}" $VIDEO $AUDIO $FILTERS $EXTRA $SUB #"--verbose=0" 2> /dev/null
+COMMAND='HandBrakeCLI -i "$INPUT_FILE" -o "${OUTPUT_FILE}" $VIDEO $AUDIO $FILTERS $EXTRA $SUB $QUIET'
+echo $COMMAND
+eval $COMMAND
 
 ##TODO
 #mettere versione ricorsiva per tutti i file in una cartella
