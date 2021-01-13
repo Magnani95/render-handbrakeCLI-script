@@ -238,12 +238,12 @@ argument_parsing_F "$@"
 
 if [[ ${QUEUE_MODE} = 'FALSE' ]]; then
 	command_creation_F "$@"
-	echo "++" && echo "$line" && echo "++"
+	echo "++" && echo "$COMMAND" && echo "++"
 	eval "$COMMAND"
 	exit 0
 elif [[ ${QUEUE_MODE} = 'ADD' ]]; then
 	command_creation_F "$@"
-	echo "++" && echo "$line" && echo "++"
+	echo "++" && echo "$COMMAND" && echo "++"
 	echo "$COMMAND" >> "${CONFIG_DIR}/queue"
 	echo "Job added to the queue"
 	exit 0
@@ -252,14 +252,14 @@ elif [[ ${QUEUE_MODE} = 'RUN' ]]; then
 	QUEUE_POS='1'
 	printf "Queue lenght:\t ${QUEUE_LEN}\n"
 	#RENDER=`head -n 1 ${CONFIG_DIR}/queue`
-	while IFS= read -r line; do
+	while IFS= read line; do
 		echo "--Running render ${QUEUE_POS} on ${QUEUE_LEN}..."
 		echo "++" && echo "$line" && echo "++"
-		eval "${line}"
+		eval "${line}" </dev/null
 		tail -n +2 "${CONFIG_DIR}/queue" > "${CONFIG_DIR}/queue.tmp" && mv "${CONFIG_DIR}/queue.tmp" "${CONFIG_DIR}/queue"
-		echo "--Render ended" && QUEUE_POS=`expr $QUEUE_POS + 1`
+		echo "--Render ended"
+		QUEUE_POS=`expr $QUEUE_POS + 1`
 	done < "${CONFIG_DIR}/queue"
-
 	exit 0
 else
 	echo "DEF IMPOSSIBLE if-else in main-end "
