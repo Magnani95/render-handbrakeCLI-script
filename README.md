@@ -31,20 +31,21 @@ User will eventually asked about input if:
   - more than one input-file is passed;
   - Output file already exists;
   - with --find-sub: which subfile add.
-NORMAL FLAGS
+	NORMAL FLAGS
 -q|--quality [int]			Set the quality
 -p|--preset [medium|slow|slower, ...]	Set the preset
 -s|--subtitle [file]			Add file to subtitles
 -f|--find-sub				Search sub in dir and subdir of input file
 -v|--verbose				Output is more talkative
-MODAL FLAGS
+	MODAL FLAGS
 -F|--force				Activate ForceMode
--FI|--force-input	 (NOT YET)	First input-file is selected
+-FI|--force-input (NOT YET)		First input-file is selected
 -FO|--force-output (NOT YET)		Overwrite output-file without prompt
 	QUEUE MANAGEMENT
 -Q|--queue				Create the queue file or print it
 -QA|--queue-add				Add current command to queue
 -QX|--queue-exec			Run sequentialy commands in queue(Implict --force-output)(Current command is not added)
+
 NOTE
 ForceMode: no input from user will be asked.
   - with --find-sub: all files found added
