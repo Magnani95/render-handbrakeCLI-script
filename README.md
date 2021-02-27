@@ -23,7 +23,7 @@ This will add the command with short name (no abs-path) in terminal
 ## Usage
 `render.sh inputFile.avi [-flag, ...]` <br/>
 Do **NOT** stack flag in single dash (eg: `-fv`) <br/>
-Actually, the script accept one input at time <br/>
+Actually, the script accepts one input at time <br/>
 ### Help
 ```
 This is a program to manage HandbrakeCLI easily.
