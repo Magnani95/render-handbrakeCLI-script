@@ -124,22 +124,23 @@ function argument_parsing_F()
 }
 function get_input_file_F()
 {
-	for f in ${InputFiles[@]}; do
+	#for f in ${InputFiles[@]}; do
+	for (( i=0; i < ${#InputFiles[@]}; i++ )) do
 		REPLY=''
-
+		
 		if [[ -z ${InputName} ]]; then	#first assignment
-			InputName=${f}
+			InputName=${InputFiles[${i}]}
 			if [[ $ForceMode == 'TRUE' ]]; then
 				echo "ForceMode: the first file detected is set as input"
 				break;
 			else
-				echo "'$f' is the file to render?"
+				echo "+'${InputFiles[${i}]}' is the file to render?"
 				while [[ ! $REPLY =~ ^[ynYN] ]]; do
 					read -p "Is that correct?[y|n]" -r -n 1 && echo
 				done
 				case $REPLY in
 					y|Y)
-					InputName=${f}
+					InputName=${InputFiles[${i}]}
 					;;
 					n|N)
 					:
@@ -153,14 +154,14 @@ function get_input_file_F()
 			fi
 		else	#NOT first assignment
 			echo "More than one input file"
-			echo "Actual selection is: ${InputName}"
-			echo "Other file is: ${f}"
+			echo "+Actual selection is: ${InputName}"
+			echo "+Other file is: ${InputFiles[${i}]}"
 			while [[ ! $REPLY =~ ^[ynYN] ]]; do
 				read -p "Do you want to change actual file? [y|n]?" -r -n 1 && echo
 			done
 			case $REPLY in
 				y|Y)
-				InputName=${f}
+				InputName=${InputFiles[${i}]}
 				;;
 				n|N)
 				:
@@ -298,7 +299,7 @@ echo "Variable definition..."
 InputName=''
 Quality="23"
 Preset="slow"
-InputFiles=''
+#InputFiles=''
 REPLY=''
 #--Mode
 FindSub='FALSE'
