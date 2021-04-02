@@ -117,7 +117,7 @@ function argument_parsing_F()
 			;;
 		esac
 	done
-	if [[ -z ${InputFiles} && ${ForceMode} =~ 'FALSE' && !${QueueMode} =~ RUN ]]; then
+	if [[ -z ${InputFiles} && ${ForceMode} =~ 'FALSE' && ! ${QueueMode} =~ RUN ]]; then
 		echo "Error, no Input file detected in parameters"
 		exit 2
 	fi
