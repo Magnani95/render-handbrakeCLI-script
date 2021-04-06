@@ -143,7 +143,7 @@ function get_input_file_F()
 					InputName=${InputFiles[${i}]}
 					;;
 					n|N)
-					:
+					InputName=''
 					;;
 					*)
 					echo 'DEF: argument_parsing_F case $REPLY'
