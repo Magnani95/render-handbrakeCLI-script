@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # TODO
-# - ForceMode should be FORCE+INPUT_ACCEPT+WRITE mode [-F -I -W]
+# - FORCE_MODE should be FORCE+INPUT_ACCEPT+WRITE mode [-F -I -W]
 # - sub search in subdir of file OR in cwd as distinct option
 # - Queue for list of input-renders and for finished one.
 # - All file in a directory
@@ -10,6 +10,10 @@
 
 ##FUN DEFINITION
 echo "Function definition..."
+#--- Print Help
+# - INPUT:	<None>
+# - SET:	INPUT_FILES
+# - MODIFY:	<None>
 function help_F()
 {
 	echo "[This] is a program to manage HandbrakeCLI easily."
@@ -25,17 +29,21 @@ function help_F()
 	echo "-f|--find-sub					Search sub in dir and subdir of input file"
 	echo "-v|--verbose					Output is much more talkative"
 	echo "	MODAL FLAGS"
-	echo "-F|--force					Activate ForceMode"
+	echo "-F|--force					Activate FORCE_MODE"
 	echo "-FI|--force-input				First input-file is selected"
 	echo "-FO|--force-output				Overwrite output-file without prompt"
 	echo "	QUEUE MANAGEMENT"
 	echo "-Q|--queue					Create the queue file or print it"
-	echo "-QA|--queue-add					Add current command to queue"
-	echo "-QX|--queue-exec				Run sequentialy commands in queue(Implict --force-output)(Current command is not added)"
+	echo "-QA|--queue-add					Add current COMMAND to queue"
+	echo "-QX|--queue-exec				Run sequentialy COMMANDs in queue(Implict --force-output)(Current COMMAND is not added)"
 	echo
-	echo "ForceMode: no input from user will be asked."
+	echo "FORCE_MODE: no input from user will be asked."
 	echo "	- with --find-sub: all files found added"
 }
+#--- Pars the argument and set internal status accordingly
+# - INPUT:	"$@" to pars arguments pass to the script
+# - SET:	<None>
+# - MODIFY:	<None>
 function argument_parsing_F()
 {
 	for p in $@; do
@@ -48,7 +56,7 @@ function argument_parsing_F()
 	while [[ $# -gt 0 ]]; do
 		if [[ "$1" =~ .*\.mp4|.*\.mkv|.*\.avi ]]; then
 			echo "'$1' is detected to be a input file "
-			InputFiles+=("$1")
+			INPUT_FILES+=("$1")
 			shift;
 			continue;
 		fi
@@ -56,57 +64,57 @@ function argument_parsing_F()
 		case $param in
 			#PARAM WITH VAL
 			-q | --quality )
-			Quality="$2"
+			QUALITY="$2"
 			shift; shift;
 			;;
 			-p | --preset)
-			Preset="$2"
+			PRESET="$2"
 			shift; shift;
 			;;
 			-s | --subtitle)
-			SubString="$SubString""$2"
+			SUB_STRING="$SUB_STRING""$2"
 			shift; shift;
 			;;
 			# MODE FLAG
 			-f | --find-sub)
-			FindSub='TRUE'
+			FIND_SUB='TRUE'
 			shift;
 			;;
 			-v | --verbose)
-			QuietMode=''
+			QUIET_MODE=''
 			shift;
 			;;
 			-F | --force)
-			ForceMode='TRUE'
+			FORCE_MODE='TRUE'
 			shift;
 			;;
 			-FI | --force-input)
-			ForceMode_input='TRUE'
+			FORCE_MODE_INPUT='TRUE'
 			shift;
 			;;
 			-FO | --force-output)
-			ForceMode_output='TRUE'
+			FORCE_MODE_OUTPUT='TRUE'
 			shift;
 			;;
 			#--Queue Management
 			-Q | --queue)
-			if [[ -e "${ConfigDir}/queue" ]]; then
+			if [[ -e "${CONFIGDIR}/queue" ]]; then
 				echo "Queue file exist" && echo "---"
-				cat "${ConfigDir}/queue"
+				cat "${CONFIGDIR}/queue"
 				exit 1
 			else
-				touch "${ConfigDir}/queue"
+				touch "${CONFIGDIR}/queue"
 				echo "Queue file does not exist. It has been created."
 				exit 1
 			fi
 			shift;
 			;;
 			-QA | --queue-add)
-			QueueMode='ADD'
+			QUEUETMODE='ADD'
 			shift;
 			;;
 			-QX | --queue-exec)
-			QueueMode='RUN'
+			QUEUETMODE='RUN'
 			shift;
 			;;
 			#OTHER
@@ -117,33 +125,36 @@ function argument_parsing_F()
 			;;
 		esac
 	done
-	if [[ -z ${InputFiles} && ${ForceMode} =~ 'FALSE' && ! ${QueueMode} =~ RUN ]]; then
+	if [[ -z ${INPUT_FILES} && ${FORCE_MODE} =~ 'FALSE' && ! ${QUEUETMODE} =~ RUN ]]; then
 		echo "Error, no Input file detected in parameters"
 		exit 2
 	fi
 }
+#--- Parse detected input files and prompt which one is to render.
+# - INPUT:	[ext] INPUT_FILES, FORCE_MODE
+# - SET:	INPUT_NAME
+# - MODIFY:	<None>
 function get_input_file_F()
 {
-	#for f in ${InputFiles[@]}; do
-	for (( i=0; i < ${#InputFiles[@]}; i++ )) do
+	for (( i=0; i < ${#INPUT_FILES[@]}; i++ )) do
 		REPLY=''
-		
-		if [[ -z ${InputName} ]]; then	#first assignment
-			InputName=${InputFiles[${i}]}
-			if [[ $ForceMode == 'TRUE' ]]; then
-				echo "ForceMode: the first file detected is set as input"
+
+		if [[ -z ${INPUT_NAME} ]]; then	#first assignment
+			INPUT_NAME=${INPUT_FILES[${i}]}
+			if [[ $FORCE_MODE == 'TRUE' ]]; then
+				echo "FORCE_MODE: the first file detected is set as input"
 				break;
 			else
-				echo "+'${InputFiles[${i}]}' is the file to render?"
+				echo "+'${INPUT_FILES[${i}]}' is the file to render?"
 				while [[ ! $REPLY =~ ^[ynYN] ]]; do
 					read -p "Is that correct?[y|n]" -r -n 1 && echo
 				done
 				case $REPLY in
 					y|Y)
-					InputName=${InputFiles[${i}]}
+					INPUT_NAME=${INPUT_FILES[${i}]}
 					;;
 					n|N)
-					InputName=''
+					INPUT_NAME=''
 					;;
 					*)
 					echo 'DEF: argument_parsing_F case $REPLY'
@@ -154,14 +165,14 @@ function get_input_file_F()
 			fi
 		else	#NOT first assignment
 			echo "More than one input file"
-			echo "+Actual selection is: ${InputName}"
-			echo "+Other file is: ${InputFiles[${i}]}"
+			echo "+Actual selection is: ${INPUT_NAME}"
+			echo "+Other file is: ${INPUT_FILES[${i}]}"
 			while [[ ! $REPLY =~ ^[ynYN] ]]; do
 				read -p "Do you want to change actual file? [y|n]?" -r -n 1 && echo
 			done
 			case $REPLY in
 				y|Y)
-				InputName=${InputFiles[${i}]}
+				INPUT_NAME=${INPUT_FILES[${i}]}
 				;;
 				n|N)
 				:
@@ -174,13 +185,17 @@ function get_input_file_F()
 			REPLY=''
 		fi
 	done
-	if [[ -z $InputName ]]; then
+	if [[ -z $INPUT_NAME ]]; then
 		echo "ERROR: No input file detected" && echo
 		exit 1
 	fi
 	REPLY=''
 }
-
+#--- Check the existence of a output file which the same name and eventually
+#	 prompt about overwrite
+# - INPUT:	[ext] OUTPUT_FILES
+# - SET:	<None>
+# - MODIFY:	<None>
 function confirm_F()
 {
 	if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]];then
@@ -190,7 +205,7 @@ function confirm_F()
 	fi
 	REPLY=''
 	while [[ ! $REPLY =~ ^[yn] ]]; do
-		echo "File: $OutputFile"
+		echo "File: $OUTPUT_FILES"
 		read -p "Output file exists. Overwrite it?[y|n]" -r -n 1 && echo
 	done
 	if [[ $REPLY = 'y' ]]; then
@@ -201,21 +216,30 @@ function confirm_F()
 	fi
 	REPLY=''
 }
+
+#--- TODO search in probable position if there is any subfile
+# - INPUT:	<None>
+# - SET:	<None>
+# - MODIFY:	<None>
 function gatherSub_F()
 {
 	:
 }
 
+#--- Parse and search for .sub files position.
+# - INPUT:	[ext] FIND_SUB, SUB_FILES, FIND_SUB, DIR_PATH
+# - SET:	SUB_STRING
+# - MODIFY:	SUB_FILES
 function getSub_F()
 {
-	#echo "find $DirPath -regex '.*\.srt'"
-	#echo $DirPath
-	echo "$SubString"
+	#echo "find $DIR_PATH -regex '.*\.srt'"
+	#echo $DIR_PATH
+	echo "$SUB_STRING"
 	REPLY=''
-	if [[ $FindSub =~ 'TRUE' ]]; then
-		readarray  SubFiles < <(find "$DirPath" -type f -regex '.*\.srt' -print)
+	if [[ $FIND_SUB =~ 'TRUE' ]]; then
+		readarray  SUB_FILES < <(find "$DIR_PATH" -type f -regex '.*\.srt' -print)
 
-		for s in "${SubFiles[@]}"; do
+		for s in "${SUB_FILES[@]}"; do
 			s=`echo "$s" | xargs `
 			while [[ ! $REPLY =~ ^[ynax] ]]; do
 				echo "File: $s"
@@ -224,10 +248,10 @@ function getSub_F()
 
 			if [[ $REPLY = 'y' ]]; then
 				echo "File added"
-				if [[ -z $SubString ]]; then
-					SubString="${s}"
+				if [[ -z $SUB_STRING ]]; then
+					SUB_STRING="${s}"
 				else
-					SubString="${SubString},${s}"
+					SUB_STRING="${SUB_STRING},${s}"
 				fi
 				REPLY=''
 			elif [[ $REPLY = 'n' ]]; then
@@ -235,10 +259,10 @@ function getSub_F()
 				REPLY=''
 			elif [[ $REPLY = 'a' ]]; then
 				echo "Sequential adding:		$s"
-				if [[ -z $SubString ]]; then
-					SubString="${s}"
+				if [[ -z $SUB_STRING ]]; then
+					SUB_STRING="${s}"
 				else
-					SubString="${SubString},${s}"
+					SUB_STRING="${SUB_STRING},${s}"
 				fi
 			elif [[ $REPLY = 'x' ]]; then
 				echo "Sequential ignoring:		$s"
@@ -247,48 +271,52 @@ function getSub_F()
 				exit 255
 			fi
 		done
-		if [[ $QuietMode =~ 'FALSE' ]]; then
+		if [[ $QUIET_MODE =~ 'FALSE' ]]; then
 			echo "++FINAL Sub STRING"
-			echo $SubString
+			echo $SUB_STRING
 		fi
 	fi
 	REPLY=''
 
 }
-
-function command_creation_F()
+#--- Create COMMAND string to run to make render happens. It calls all the 
+#	 functions required to create the command
+# - INPUT:	<None>
+# - SET:	COMMAND
+# - MODIFY:	<None>
+function COMMAND_creation_F()
 {
 	get_input_file_F
-	FilePath=`realpath "$InputName"`
+	FILEPATH=`realpath "$INPUT_NAME"`
 
-	DirPath=`dirname "$FilePath"`
-	FileName=`echo "$FilePath"|sed 's|.*/\(.*\)\..*|\1|'`
-	echo "+dir: "$DirPath""
-	echo "+file: "$FilePath""
+	DIR_PATH=`dirname "$FILEPATH"`
+	FILENAME=`echo "$FILEPATH"|sed 's|.*/\(.*\)\..*|\1|'`
+	echo "+dir: "$DIR_PATH""
+	echo "+file: "$FILEPATH""
 
 	#--INPUT
-	InputFile="$FilePath"
-	if [[ ! -e $InputFile ]]; then
+	INPUT_FILE="$FILEPATH"
+	if [[ ! -e $INPUT_FILE ]]; then
 		echo "ERROR: the input file does not exists"
 		exit 1
 	fi
 	#--OUTPUT FILE
-	OutputFile="${Output_dir}${FileName}.mkv"
-	if [[ -e $OutputFile ]]; then
+	OUTPUT_FILES="${OUTPUT_DIR}${FILENAME}.mkv"
+	if [[ -e $OUTPUT_FILES ]]; then
 		confirm_F
 	fi
 	#ENCODER SETTINGS
-	Video="-e x265 -q $Quality --encoder-preset $Preset"
-	Audio="--all-audio -E av_aac -6 dpl2 --all-subtitles "
-	Filters=''
-	Extra="-x pmode:pools='16'" #"wpp:pools='thread count'"		#var=val:var=val
+	VIDEO="-e x265 -q $QUALITY --encoder-preset $PRESET"
+	AUDIO="--all-audio -E av_aac -6 dpl2 --all-subtitles "
+	FILTERS=''
+	EXTRA="-x pmode:pools='16'" #"wpp:pools='thread count'"		#var=val:var=val
 	#--Sub
 	getSub_F
-	if [[ -n $SubString ]]; then
-		Sub="--srt-file \""$SubString"\" "
+	if [[ -n $SUB_STRING ]]; then
+		SUB="--srt-file \""$SUB_STRING"\" "
 	fi
 	#--LANCIO RENDER
-	command="HandBrakeCLI -i \""${InputFile}"\" -o \""${OutputFile}"\" $Video $Audio $Filters $Extra "${Sub}" $QuietMode"
+	COMMAND="HandBrakeCLI -i \""${INPUT_FILE}"\" -o \""${OUTPUT_FILES}"\" $VIDEO $AUDIO $FILTERS $EXTRA "${SUB}" $QUIET_MODE"
 
 }
 
@@ -296,48 +324,48 @@ function command_creation_F()
 ##----------MAIN-------------
 echo "Variable definition..."
 #--DEFAULT
-InputName=''
-Quality="23"
-Preset="slow"
-#InputFiles=''
+INPUT_NAME=''
+QUALITY="23"
+PRESET="slow"
+#INPUT_FILES=''
 REPLY=''
 #--Mode
-FindSub='FALSE'
-ForceMode='FALSE'
-ForceMode_input='FALSE'
-ForceMode_output='FALSE'
-QuietMode="--verbose=0 2> /dev/null"
-QueueMode='FALSE'
+FIND_SUB='FALSE'
+FORCE_MODE='FALSE'
+FORCE_MODE_INPUT='FALSE'
+FORCE_MODE_OUTPUT='FALSE'
+QUIET_MODE="--verbose=0 2> /dev/null"
+QUEUETMODE='FALSE'
 #--Directory
-Output_dir="/hdd/Render/Output/"
-ConfigDir='/hdd/Render/'
+OUTPUT_DIR="./"		#"/hdd/Render/Output/"
+CONFIGDIR="./"		#'/hdd/Render/'
 #--
 argument_parsing_F "$@"
 
-if [[ ${QueueMode} = 'FALSE' ]]; then
-	command_creation_F "$@"
-	echo "++" && echo "$command" && echo "++"
-	eval "$command"
+if [[ ${QUEUETMODE} = 'FALSE' ]]; then
+	COMMAND_creation_F "$@"
+	echo "++" && echo "$COMMAND" && echo "++"
+	eval "$COMMAND"
 	exit 0
-elif [[ ${QueueMode} = 'ADD' ]]; then
-	command_creation_F "$@"
-	echo "++" && echo "$command" && echo "++"
-	echo "$command" >> "${ConfigDir}/queue"
+elif [[ ${QUEUETMODE} = 'ADD' ]]; then
+	COMMAND_creation_F "$@"
+	echo "++" && echo "$COMMAND" && echo "++"
+	echo "$COMMAND" >> "${CONFIGDIR}/queue"
 	echo "Job added to the queue"
 	exit 0
-elif [[ ${QueueMode} = 'RUN' ]]; then
-	queue_len=`cat ${ConfigDir}/queue | wc -l`
+elif [[ ${QUEUETMODE} = 'RUN' ]]; then
+	queue_len=`cat ${CONFIGDIR}/queue | wc -l`
 	queue_pos='1'
 	printf "Queue lenght:\t ${queue_len}\n"
-	#RENDER=`head -n 1 ${ConfigDir}/queue`
+	#RENDER=`head -n 1 ${CONFIGDIR}/queue`
 	while IFS= read line; do
 		echo "--Running render ${queue_pos} on ${queue_len}..."
 		echo "++" && echo "$line" && echo "++"
 		eval "${line}" </dev/null
-		tail -n +2 "${ConfigDir}/queue" > "${ConfigDir}/queue.tmp" && mv "${ConfigDir}/queue.tmp" "${ConfigDir}/queue"
+		tail -n +2 "${CONFIGDIR}/queue" > "${CONFIGDIR}/queue.tmp" && mv "${CONFIGDIR}/queue.tmp" "${CONFIGDIR}/queue"
 		echo "--Render ended"
 		queue_pos=`expr $queue_pos + 1`
-	done < "${ConfigDir}/queue"
+	done < "${CONFIGDIR}/queue"
 	exit 0
 else
 	echo "DEF IMPOSSIBLE if-else in main-end "
